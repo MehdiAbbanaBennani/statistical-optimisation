@@ -16,7 +16,7 @@ def plot_loss(iterations, train_losses, test_losses, y_label, title=None, filena
     ax.legend(loc='best')
 
     if to_save:
-        fig.savefig("logs/" + filename + ".png")
+        fig.savefig("../logs/" + filename + ".png")
     else:
         plt.show()
     # plt.close(fig)
@@ -37,3 +37,11 @@ def preprocess(data, N):
                      for i in range(data["ytest"].shape[0])]
 
     return data
+
+
+def plot_data(X, y):
+    X_1 = [X[i][0] for i in range(len(X))]
+    X_2 = [X[i][1] for i in range(len(X))]
+
+    plt.scatter(X_1, X_2, c=y, cmap=plt.cm.Set1, edgecolor='k')
+    plt.show()
