@@ -14,14 +14,14 @@ def run(optimizer, loss_type, mu):
   # Parameters
   n_samples = 1000
   N = None
-  n_epoch = 15
+  n_epoch = 50
   log_freq = "epoch"
   synthetic_data = False
   d = 100
   gradient_parameters = {"batch_size": 1,
                          "stepsize_type": "constant",
-                         "initial_stepsize": 0.001}
-  to_save = False
+                         "initial_stepsize": 0.0001}
+  to_save = True
 
   # Data generation
   if synthetic_data:
@@ -46,8 +46,7 @@ def run(optimizer, loss_type, mu):
   logs = logistic_model.run_optimizer(n_epoch, log_freq, optimizer)
 
   # Visualize the logs
-  file_tag = loss_type + "_lr_" + \
-             str(gradient_parameters["initial_stepsize"]) + "_" + optimizer
+  file_tag = loss_type + "_mu_" + str(mu) + "_" + optimizer
   plot_loss(logs["iterations"],
             train_losses=logs["train_errors"],
             test_losses=logs["test_errors"],
@@ -59,22 +58,20 @@ def run(optimizer, loss_type, mu):
             x_label="Epochs", y_label="Test loss",
             to_save=to_save, filename="loss_" + file_tag)
 
-  print(logs["test_losses"])
-
   # Visualize the predictions
   # predictions = list(logistic_model.predict(data["Xtrain"]))
   # predicted_labels = [int(round(prediction)) for prediction in predictions]
   # plot_data(data["Xtrain"], predicted_labels)
 
 
-# param_grid = {'optimizer': ["sag", "sgd"],
-#               'loss_type': ["square", "logistic"],
-#               'stepsize': [1e-1, 1e-5]
-#               }
-param_grid = {'optimizer': ["sgd"],
-              'loss_type': ["logistic"],
-              'mu': [1e-5]
+param_grid = {'optimizer': ["sag", "sgd"],
+              'loss_type': ["square", "logistic"],
+              'mu': [1e-1, 1e-5]
               }
+# param_grid = {'optimizer': ["sgd"],
+#               'loss_type': ["logistic"],
+#               'mu': [1e-5]
+#               }
 
 grid = ParameterGrid(param_grid)
 for params in grid:
