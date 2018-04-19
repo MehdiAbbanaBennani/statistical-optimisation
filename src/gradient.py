@@ -38,15 +38,15 @@ class Gradient :
         if stepsize_type == "sqrt" :
             return 1 / math.sqrt(it + 1)
 
-    @staticmethod
-    def compute_single_gradient(model, X, y_true):
-        y_pred = model.predict(X)
+    # @staticmethod
+    def compute_single_gradient(self, model, X, y_true):
+        # y_pred = model.predict(X)
 
-        if model.type == "square":
-            gradient = (y_pred - y_true) * y_pred * (1 - y_pred) * X
-        if model.type == "logistic":
-            gradient = (- y_true * (1 - y_pred) + (1 - y_true) * y_pred) * X
-        return gradient
+        # if model.type == "square":
+        #     gradient = (y_pred - y_true) * y_pred * (1 - y_pred) * X
+        # if model.type == "logistic":
+        #     gradient = (- y_true * (1 - y_pred) + (1 - y_true) * y_pred) * X
+        return self.compute_sag_scalar(model, X, y_true) * X
 
     def compute_gradient(self, model):
         X, y, index = next(self.data_generator)
@@ -57,16 +57,19 @@ class Gradient :
     def sgd_step(self, model, it):
         gradient = self.compute_gradient(model)
         step_size = self.stepsize(self.stepsize_type, self.initial_stepsize, it)
-        model.theta -= step_size * gradient
+        # model.theta -= step_size * gradient
+        model.theta -= (step_size * gradient + model.mu * model.theta)
 
     @staticmethod
     def compute_sag_scalar(model, X, y_true):
         y_pred = model.predict(X)
 
         if model.type == "square":
-            scalar = (y_pred - y_true) * y_pred * (1 - y_pred)
+            # scalar = (y_pred - y_true) * y_pred * (1 - y_pred)
+            scalar = (y_pred - y_true)
         if model.type == "logistic":
-            scalar = (- y_true * (1 - y_pred) + (1 - y_true) * y_pred)
+            scalar = - y_true * np.exp(- y_true * y_pred) / (1 + np.exp(- y_true * y_pred))
+            # scalar = (- y_true * (1 - y_pred) + (1 - y_true) * y_pred)
         return scalar
 
     def update_sag_scalars(self, sag_scalar, index):
@@ -91,6 +94,6 @@ class Gradient :
         self.update_sag_scalars(sag_scalar, indexes[0])
 
         step_size = self.stepsize(self.stepsize_type, self.initial_stepsize, it)
-        model.theta -= step_size * sag_direction
-
+        # model.theta -= step_size * sag_direction
+        model.theta -= (step_size * sag_direction + model.mu * model.theta)
 

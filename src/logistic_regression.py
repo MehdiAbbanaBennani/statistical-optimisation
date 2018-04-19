@@ -27,8 +27,9 @@ class LogisticRegression:
                     for i in range(N)]) / N
 
     def single_error(self, X, y_true):
-        y_pred = round(self.predict(X))
-        return abs(y_true - y_pred)
+        # y_pred = round(self.predict(X))
+        y_pred = self.predict_label(X)
+        return abs(y_true - y_pred) / 2
 
     def loss(self, X, y_true):
         N = len(y_true)
@@ -40,10 +41,19 @@ class LogisticRegression:
         if self.type == "square":
             return (y_pred - y_true) ** 2
         if self.type == "logistic":
-            return - y_true * np.log(y_pred) - (1 - y_true) * np.log(1 - y_pred)
+            return np.log(1 + np.exp(- y_true * y_pred))
+            # return - y_true * np.log(y_pred) - (1 - y_true) * np.log(1 - y_pred)
 
     def predict(self, X):
-        return self.sigmoid(np.dot(X, self.theta))
+        # return self.sigmoid(np.dot(X, self.theta))
+        return np.dot(X, self.theta)
+
+    def predict_label(self, X):
+        y_pred = self.predict(X)
+        if y_pred < 0 :
+            return -1
+        else :
+            return 1
 
     def log(self, log_dict, it, log_freq):
         log_dict["train_losses"].append(self.loss(X=self.mat["Xtrain"],

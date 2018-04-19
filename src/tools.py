@@ -34,9 +34,9 @@ def preprocess(data, N):
         data["ytrain"] = data["ytrain"][:N]
 
     # Rescale y to binary
-    data["ytrain"] = [(data["ytrain"][i, 0] + 1) / 2
+    data["ytrain"] = [data["ytrain"][i, 0]
                       for i in range(data["ytrain"].shape[0])]
-    data["ytest"] = [(data["ytest"][i, 0] + 1) / 2
+    data["ytest"] = [data["ytest"][i, 0]
                      for i in range(data["ytest"].shape[0])]
 
     return data
