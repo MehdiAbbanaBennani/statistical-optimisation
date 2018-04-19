@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 from random import shuffle
+import numpy as np
 
 
-def plot_loss(iterations, train_losses, test_losses, y_label, title=None, filename=None, to_save=False):
+def plot_loss(iterations, train_losses, test_losses, x_label, y_label, title=None, filename=None, to_save=False):
     fig = plt.figure(figsize=(10, 5))
     ax = fig.add_subplot(111)
     if title is not None:
@@ -10,8 +11,9 @@ def plot_loss(iterations, train_losses, test_losses, y_label, title=None, filena
 
     plt.plot(iterations, train_losses, label='Train')
     plt.plot(iterations, test_losses, label='Test')
+    plt.xticks(np.arange(min(iterations), max(iterations) + 1, 10))
 
-    ax.set_xlabel('Iterations')
+    ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.legend(loc='best')
 
@@ -27,8 +29,9 @@ def preprocess(data, N):
     shuffle(data["Xtrain"])
     shuffle(data["ytrain"])
 
-    data["Xtrain"] = data["Xtrain"][:N]
-    data["ytrain"] = data["ytrain"][:N]
+    if N is not None :
+        data["Xtrain"] = data["Xtrain"][:N]
+        data["ytrain"] = data["ytrain"][:N]
 
     # Rescale y to binary
     data["ytrain"] = [(data["ytrain"][i, 0] + 1) / 2

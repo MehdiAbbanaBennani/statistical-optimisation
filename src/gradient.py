@@ -13,8 +13,10 @@ class Gradient :
         self.initial_stepsize = param["initial_stepsize"]
 
         # SAG parameters
-        self.seen_gradients_counts = 0
-        self.stored_gradients = [0] * self.n_samples
+        self.previous_direction = 0
+        self.previous_seen_count = 1
+        self.seen_gradients_counts = 1
+        self.stored_sag_scalars = [0] * self.n_samples
         self.first_seen = [0] * self.n_samples
 
     @staticmethod
@@ -46,7 +48,7 @@ class Gradient :
             gradient = (- y_true * (1 - y_pred) + (1 - y_true) * y_pred) * X
         return gradient
 
-    def compute_gradient(self, model, optimizer):
+    def compute_gradient(self, model):
         X, y, index = next(self.data_generator)
         gradients = np.array([self.compute_single_gradient(model, X[i], y[i])
                      for i in range(self.batch_size)])
@@ -57,25 +59,37 @@ class Gradient :
         step_size = self.stepsize(self.stepsize_type, self.initial_stepsize, it)
         model.theta -= step_size * gradient
 
-    def update_gradients(self, gradient, index):
-        if self.first_seen[index] == 0 :
+    @staticmethod
+    def compute_sag_scalar(model, X, y_true):
+        y_pred = model.predict(X)
+
+        if model.type == "square":
+            scalar = (y_pred - y_true) * y_pred * (1 - y_pred)
+        if model.type == "logistic":
+            scalar = (- y_true * (1 - y_pred) + (1 - y_true) * y_pred)
+        return scalar
+
+    def update_sag_scalars(self, sag_scalar, index):
+        self.previous_seen_count = self.seen_gradients_counts
+        if self.first_seen[index] == 0:
             self.first_seen[index] = 1
             self.seen_gradients_counts += 1
-        self.stored_gradients[index] = gradient
+        self.stored_sag_scalars[index] = sag_scalar
 
-    def compute_sag_direction(self):
-        return np.sum(self.stored_gradients, axis=0) \
-                       / self.seen_gradients_counts
-
-    def compute_sag_scalar(self, model, X, y):
-        if model.type == "square" :
-
+    def compute_sag_direction(self, sag_scalar, x, index):
+        old_grad = self.previous_direction * self.previous_seen_count
+        correction_term = (sag_scalar - self.stored_sag_scalars[index]) * x
+        return (old_grad + correction_term) / self.seen_gradients_counts
 
     def sag_step(self, model, it):
-        X, y, index = next(self.data_generator)
-        gradient = self.compute_single_gradient(model, X[0], y[0])
-        self.update_gradients(gradient, index)
-        sag_direction = self.compute_sag_direction(gradient)
+        assert self.batch_size == 1
+
+        X, y, indexes = next(self.data_generator)
+        sag_scalar = self.compute_sag_scalar(model, X[0], y[0])
+        sag_direction = self.compute_sag_direction(sag_scalar, X[0], indexes[0])
+        self.previous_direction = sag_direction
+        self.update_sag_scalars(sag_scalar, indexes[0])
+
         step_size = self.stepsize(self.stepsize_type, self.initial_stepsize, it)
         model.theta -= step_size * sag_direction
 

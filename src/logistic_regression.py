@@ -5,7 +5,7 @@ from gradient import Gradient
 
 class LogisticRegression:
 
-    def __init__(self, type, gradient_param, data, d=100, theta=None):
+    def __init__(self, type, mu, gradient_param, data, d=100, theta=None):
         if theta is None:
             self.theta = np.random.rand(d) * 2 - 1
         else:
@@ -14,6 +14,8 @@ class LogisticRegression:
         self.type = type
         self.gradient = Gradient(gradient_param)
         self.mat = data
+        self.n_samples = data["Xtrain"].shape[0]
+        self.mu = mu
 
     @staticmethod
     def sigmoid(z):
@@ -43,24 +45,36 @@ class LogisticRegression:
     def predict(self, X):
         return self.sigmoid(np.dot(X, self.theta))
 
-    def log(self, log_dict, it):
+    def log(self, log_dict, it, log_freq):
         log_dict["train_losses"].append(self.loss(X=self.mat["Xtrain"],
                                                   y_true=self.mat["ytrain"]))
         log_dict["test_losses"].append(self.loss(X=self.mat["Xtest"],
                                                  y_true=self.mat["ytest"]))
-        log_dict["iterations"].append(it)
         log_dict["train_errors"].append(self.error(X=self.mat["Xtrain"],
                                                    y_true=self.mat["ytrain"]))
         log_dict["test_errors"].append(self.error(X=self.mat["Xtest"],
                                                   y_true=self.mat["ytest"]))
+        if log_freq == "epoch" :
+            log_dict["iterations"].append(it / self.n_samples)
+        else :
+            log_dict["iterations"].append(it)
 
-    def run_optimizer(self, n_iter, log_freq, optimizer):
-        # Stochastic Gradient Descent
+    def compute_n_iter(self, n_epoch):
+        return n_epoch * (self.n_samples // self.gradient.batch_size)
+
+    def log_freq_to_iter(self, log_freq):
+        if log_freq == "epoch" :
+            return self.n_samples
+        else :
+            return log_freq
+
+    def run_optimizer(self, n_epoch, log_freq, optimizer):
         log_dict = {"train_losses": [],
                     "test_losses": [],
                     "iterations": [],
                     "train_errors": [],
                     "test_errors": []}
+        n_iter = self.compute_n_iter(n_epoch)
 
         for it in tqdm(range(n_iter)):
             if optimizer == "sgd" :
@@ -68,7 +82,7 @@ class LogisticRegression:
             if optimizer == "sag":
                 self.gradient.sag_step(model=self, it=it)
 
-            if it % log_freq == 0:
-                self.log(log_dict, it)
+            if it % self.log_freq_to_iter(log_freq) == 0:
+                self.log(log_dict, it, log_freq)
 
         return log_dict
